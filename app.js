@@ -37,6 +37,7 @@ function init(bridge) {
         title: "Source URL required",
         summary: "Enter a source URL to run Homebrew logic.",
         checks: [{ status: "fail", message: "No URL provided." }],
+        detectedVersion: null,
         generatedUrl: null,
       });
       return;
@@ -48,6 +49,7 @@ function init(bridge) {
         title: "Target version required",
         summary: "Enter the target version you want to bump to.",
         checks: [{ status: "fail", message: "No target version provided." }],
+        detectedVersion: null,
         generatedUrl: null,
       });
       return;
@@ -191,6 +193,7 @@ function init(bridge) {
         title: statusTitle(status),
         summary: buildSummary(status, targetVersion),
         checks,
+        detectedVersion,
         generatedUrl,
       });
     } catch (error) {
@@ -199,6 +202,7 @@ function init(bridge) {
         title: "Check failed",
         summary: "Unexpected error while running checks.",
         checks: [{ status: "fail", message: String(error) }],
+        detectedVersion: null,
         generatedUrl: null,
       });
     } finally {
@@ -291,12 +295,12 @@ function buildSummary(status, targetVersion) {
   return "One or more required checks failed.";
 }
 
-function renderResult({ status, title, summary, checks, generatedUrl }) {
+function renderResult({ status, title, summary, checks, detectedVersion, generatedUrl }) {
   const panel = document.getElementById("resultPanel");
   const titleEl = document.getElementById("resultTitle");
   const summaryEl = document.getElementById("resultSummary");
   const checksEl = document.getElementById("resultChecks");
-  const generatedUrlBlock = document.getElementById("generatedUrlBlock");
+  const detectedVersionValue = document.getElementById("detectedVersionValue");
   const generatedUrlValue = document.getElementById("generatedUrlValue");
 
   panel.classList.remove("hidden");
@@ -304,13 +308,8 @@ function renderResult({ status, title, summary, checks, generatedUrl }) {
   titleEl.className = status;
   summaryEl.textContent = summary;
 
-  if (generatedUrl) {
-    generatedUrlBlock.classList.remove("hidden");
-    generatedUrlValue.textContent = generatedUrl;
-  } else {
-    generatedUrlBlock.classList.add("hidden");
-    generatedUrlValue.textContent = "";
-  }
+  detectedVersionValue.textContent = detectedVersion || "Not detected from URL";
+  generatedUrlValue.textContent = generatedUrl || "No generated URL (check inputs/warnings)";
 
   checksEl.innerHTML = "";
   for (const check of checks) {
@@ -333,6 +332,7 @@ function renderBridgeFailure() {
           "Confirm the ruby.wasm CDN script is reachable and loaded before app.js executes.",
       },
     ],
+    detectedVersion: null,
     generatedUrl: null,
   });
 }

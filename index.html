@@ -47,9 +47,15 @@
       <section id="resultPanel" class="panel hidden" aria-live="polite">
         <h2 id="resultTitle"></h2>
         <p id="resultSummary"></p>
-        <div id="generatedUrlBlock" class="hidden">
-          <h3>Homebrew-generated URL</h3>
-          <code id="generatedUrlValue"></code>
+        <div id="resultValues">
+          <div class="resultValueCard">
+            <h3>Detected Version In URL</h3>
+            <code id="detectedVersionValue"></code>
+          </div>
+          <div class="resultValueCard">
+            <h3>Homebrew-Generated URL</h3>
+            <code id="generatedUrlValue"></code>
+          </div>
         </div>
         <ul id="resultChecks"></ul>
       </section>

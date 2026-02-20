@@ -109,19 +109,27 @@ button[disabled] {
   margin: 0 0 10px;
 }
 
-#generatedUrlBlock {
+#resultValues {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
   margin: 0 0 12px;
+}
+
+.resultValueCard {
+  margin: 0;
   padding: 10px;
   border: 1px solid #d6ccae;
   border-radius: 10px;
   background: #fff8dd;
 }
 
-#generatedUrlBlock h3 {
+.resultValueCard h3 {
   margin: 0 0 8px;
   font-size: 0.95rem;
 }
 
+#detectedVersionValue,
 #generatedUrlValue {
   display: block;
   overflow-wrap: anywhere;
