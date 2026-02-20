@@ -109,6 +109,26 @@ button[disabled] {
   margin: 0 0 10px;
 }
 
+#generatedUrlBlock {
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid #d6ccae;
+  border-radius: 10px;
+  background: #fff8dd;
+}
+
+#generatedUrlBlock h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+#generatedUrlValue {
+  display: block;
+  overflow-wrap: anywhere;
+  font-family: "Menlo", "Consolas", "Monaco", monospace;
+  font-size: 0.88rem;
+}
+
 #resultChecks {
   margin: 0;
   padding-left: 18px;

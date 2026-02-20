@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# This file ports Homebrew version detection and comparison behavior for browser use.
-# Derived from Homebrew's `Library/Homebrew/version.rb` and `version/parser.rb`.
+# This file ports Homebrew version detection, comparison and URL bump behavior for browser use.
+# Derived from Homebrew's `Library/Homebrew/version.rb`, `version/parser.rb` and
+# `dev-cmd/bump-formula-pr.rb` (update_url logic).
 # Homebrew is BSD-2-Clause licensed: https://github.com/Homebrew/brew/blob/master/LICENSE.txt
 
 require "pathname"
@@ -649,6 +650,24 @@ end
 module BrewVersionBridge
   module_function
 
+  # Ported from Homebrew:
+  #   Library/Homebrew/dev-cmd/bump-formula-pr.rb
+  #   method: update_url(old_url, old_version, new_version)
+  def update_url(old_url, old_version, new_version)
+    new_url = old_url.gsub(old_version, new_version)
+    old_version_parts = old_version.split(".")
+    return new_url if old_version_parts.length < 2
+
+    new_version_parts = new_version.split(".")
+    return new_url if new_version_parts.length != old_version_parts.length
+
+    partial_old_version = old_version_parts[0..-2]&.join(".")
+    partial_new_version = new_version_parts[0..-2]&.join(".")
+    return new_url if blank_string?(partial_old_version) || blank_string?(partial_new_version)
+
+    new_url.gsub(%r{/(v?)#{Regexp.escape(partial_old_version)}/}, "/\\1#{partial_new_version}/")
+  end
+
   def detect_version(url)
     version = Version.detect(url.to_s)
     version.null? ? nil : version.to_s
@@ -672,6 +691,10 @@ module BrewVersionBridge
   rescue StandardError
     nil
   end
+
+  def blank_string?(value)
+    value.nil? || value.empty?
+  end
 end
 
 begin
@@ -681,6 +704,9 @@ begin
   bridge[:detectVersion] = proc { |url| BrewVersionBridge.detect_version(url.to_s) }
   bridge[:parseVersion] = proc { |version| BrewVersionBridge.parse_version(version.to_s) }
   bridge[:compareVersions] = proc { |left, right| BrewVersionBridge.compare_versions(left.to_s, right.to_s) }
+  bridge[:updateUrl] = proc do |old_url, old_version, new_version|
+    BrewVersionBridge.update_url(old_url.to_s, old_version.to_s, new_version.to_s)
+  end
   JS.global[:BrewVersionCheck] = bridge
 rescue LoadError
   # Running outside ruby.wasm; bridge is only needed in browser.

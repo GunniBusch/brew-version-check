@@ -21,4 +21,16 @@ class VersionPortTest < Minitest::Test
     assert_equal 0, BrewVersionBridge.compare_versions("1.2.3", "1.2.3")
     assert_equal(-1, BrewVersionBridge.compare_versions("1.2.3", "1.2.4"))
   end
+
+  def test_update_url_uses_homebrew_bump_logic
+    old_url = "https://example.com/download/1.2/tool-1.2.3.tar.gz"
+    new_url = BrewVersionBridge.update_url(old_url, "1.2.3", "1.3.0")
+    assert_equal "https://example.com/download/1.3/tool-1.3.0.tar.gz", new_url
+  end
+
+  def test_update_url_can_leave_url_unchanged
+    old_url = "https://example.com/tool-latest.tar.gz"
+    new_url = BrewVersionBridge.update_url(old_url, "1.2.3", "1.3.0")
+    assert_equal old_url, new_url
+  end
 end

@@ -15,8 +15,8 @@
         <p class="eyebrow">Brew Formula Helper</p>
         <h1>Version and URL Compatibility Checker</h1>
         <p>
-          Uses a Ruby WebAssembly port of Homebrew's version parser to detect versions from
-          source URLs and compare them against declared and stable formula versions.
+          Uses a Ruby WebAssembly port of Homebrew logic to detect versions and generate
+          the bumped source URL Homebrew would produce for a manually entered target version.
         </p>
       </header>
 
@@ -31,15 +31,26 @@
           placeholder="https://github.com/org/project/archive/v1.2.3.tar.gz"
         />
 
-        <label for="declaredVersion">Declared version (optional)</label>
-        <input id="declaredVersion" type="text" placeholder="e.g. 1.2.3" />
+        <label for="currentVersion">Current version override (optional)</label>
+        <input
+          id="currentVersion"
+          type="text"
+          placeholder="If omitted, Homebrew logic detects from URL"
+        />
 
-        <button id="checkBtn" type="button">Check Compatibility</button>
+        <label for="targetVersion">Target version (manual)</label>
+        <input id="targetVersion" type="text" placeholder="e.g. 1.3.0" />
+
+        <button id="checkBtn" type="button">Generate and Check</button>
       </section>
 
       <section id="resultPanel" class="panel hidden" aria-live="polite">
         <h2 id="resultTitle"></h2>
         <p id="resultSummary"></p>
+        <div id="generatedUrlBlock" class="hidden">
+          <h3>Homebrew-generated URL</h3>
+          <code id="generatedUrlValue"></code>
+        </div>
         <ul id="resultChecks"></ul>
       </section>
     </main>

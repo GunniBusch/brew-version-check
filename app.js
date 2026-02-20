@@ -21,40 +21,55 @@ function waitForBridge(attempt = 0) {
 function init(bridge) {
   const formulaEl = document.getElementById("formulaName");
   const urlEl = document.getElementById("sourceUrl");
-  const declaredEl = document.getElementById("declaredVersion");
+  const currentEl = document.getElementById("currentVersion");
+  const targetEl = document.getElementById("targetVersion");
   const checkBtn = document.getElementById("checkBtn");
 
   checkBtn.addEventListener("click", async () => {
     const formulaName = formulaEl.value.trim();
     const sourceUrl = urlEl.value.trim();
-    const declaredVersion = declaredEl.value.trim();
+    const currentOverride = currentEl.value.trim();
+    const targetVersionInput = targetEl.value.trim();
 
     if (!sourceUrl) {
       renderResult({
         status: "fail",
         title: "Source URL required",
-        summary: "Enter a URL so the checker can run Homebrew-style version detection.",
+        summary: "Enter a source URL to run Homebrew logic.",
         checks: [{ status: "fail", message: "No URL provided." }],
+        generatedUrl: null,
+      });
+      return;
+    }
+
+    if (!targetVersionInput) {
+      renderResult({
+        status: "fail",
+        title: "Target version required",
+        summary: "Enter the target version you want to bump to.",
+        checks: [{ status: "fail", message: "No target version provided." }],
+        generatedUrl: null,
       });
       return;
     }
 
     checkBtn.disabled = true;
-    checkBtn.textContent = "Checking...";
+    checkBtn.textContent = "Generating...";
 
     try {
       const checks = [];
-      const detectedVersion = bridge.detectVersion(sourceUrl);
+      let generatedUrl = null;
 
-      if (!detectedVersion) {
+      const detectedVersion = bridge.detectVersion(sourceUrl);
+      if (detectedVersion) {
         checks.push({
-          status: "fail",
-          message: "Homebrew parser could not detect a version from this URL.",
+          status: "ok",
+          message: `Detected current version from URL: ${detectedVersion}`,
         });
       } else {
         checks.push({
-          status: "ok",
-          message: `Detected version from URL: ${detectedVersion}`,
+          status: "warn",
+          message: "Could not auto-detect current version from URL.",
         });
       }
 
@@ -62,42 +77,111 @@ function init(bridge) {
       checks.push({
         status: secure ? "ok" : "warn",
         message: secure
-          ? "URL uses HTTPS."
-          : "URL does not use HTTPS. Homebrew/core generally expects secure source URLs.",
+          ? "Source URL uses HTTPS."
+          : "Source URL does not use HTTPS. Homebrew/core usually requires secure URLs.",
       });
 
       checks.push({
         status: allowedArchivePattern.test(sourceUrl) ? "ok" : "warn",
         message: allowedArchivePattern.test(sourceUrl)
-          ? "URL appears to target a common source archive extension."
-          : "URL extension is uncommon for source archives; verify Homebrew download strategy support.",
+          ? "Source URL looks like a common archive format."
+          : "Source URL extension is uncommon for source archives.",
       });
 
-      if (declaredVersion) {
-        const declaredParsed = bridge.parseVersion(declaredVersion);
-        if (!declaredParsed) {
+      const targetVersion = bridge.parseVersion(targetVersionInput);
+      if (!targetVersion) {
+        checks.push({
+          status: "fail",
+          message: "Target version is not parseable by Homebrew version logic.",
+        });
+      } else {
+        checks.push({
+          status: "ok",
+          message: `Target version accepted: ${targetVersion}`,
+        });
+      }
+
+      let currentVersion = null;
+      if (currentOverride) {
+        currentVersion = bridge.parseVersion(currentOverride);
+        if (!currentVersion) {
           checks.push({
             status: "fail",
-            message: "Declared version is not parseable by Homebrew version logic.",
+            message: "Current version override is not parseable by Homebrew version logic.",
           });
-        } else if (detectedVersion) {
-          const cmp = bridge.compareVersions(detectedVersion, declaredParsed);
-          if (cmp === 0) {
+        } else {
+          checks.push({
+            status: "ok",
+            message: `Using manual current version override: ${currentVersion}`,
+          });
+
+          if (detectedVersion && bridge.compareVersions(currentVersion, detectedVersion) !== 0) {
             checks.push({
-              status: "ok",
-              message: `Declared version matches detected URL version (${declaredParsed}).`,
-            });
-          } else {
-            checks.push({
-              status: "fail",
-              message: `Declared version (${declaredParsed}) does not match detected URL version (${detectedVersion}).`,
+              status: "warn",
+              message: `Manual current version (${currentVersion}) differs from URL-detected version (${detectedVersion}).`,
             });
           }
         }
+      } else if (detectedVersion) {
+        currentVersion = detectedVersion;
+        checks.push({
+          status: "ok",
+          message: "Using URL-detected current version for Homebrew URL rewrite.",
+        });
+      } else {
+        checks.push({
+          status: "fail",
+          message: "Cannot generate bumped URL without a current version. Enter a current version override.",
+        });
       }
 
-      if (formulaName) {
-        const formulaCheck = await compareAgainstStableFormula(bridge, formulaName, detectedVersion);
+      if (currentVersion && targetVersion) {
+        const progression = bridge.compareVersions(currentVersion, targetVersion);
+        if (progression === null || progression === undefined) {
+          checks.push({
+            status: "warn",
+            message: "Could not compare current and target versions.",
+          });
+        } else if (progression < 0) {
+          checks.push({
+            status: "ok",
+            message: `Target version (${targetVersion}) is newer than current (${currentVersion}).`,
+          });
+        } else if (progression === 0) {
+          checks.push({
+            status: "warn",
+            message: "Target version equals current version. URL may remain unchanged.",
+          });
+        } else {
+          checks.push({
+            status: "warn",
+            message: `Target version (${targetVersion}) is older than current (${currentVersion}).`,
+          });
+        }
+
+        generatedUrl = bridge.updateUrl(sourceUrl, currentVersion, targetVersion);
+
+        if (!generatedUrl) {
+          checks.push({
+            status: "fail",
+            message: "Homebrew URL rewrite failed.",
+          });
+        } else if (generatedUrl === sourceUrl) {
+          checks.push({
+            status: "warn",
+            message:
+              "Homebrew URL rewrite produced the same URL. This usually needs manual bump handling.",
+          });
+        } else {
+          checks.push({
+            status: "ok",
+            message: "Generated a new URL using Homebrew's bump-formula-pr update_url logic.",
+          });
+        }
+      }
+
+      if (formulaName && targetVersion) {
+        const formulaCheck = await compareAgainstStableFormula(bridge, formulaName, targetVersion);
         checks.push(formulaCheck);
       }
 
@@ -105,8 +189,9 @@ function init(bridge) {
       renderResult({
         status,
         title: statusTitle(status),
-        summary: buildSummary(status, detectedVersion),
+        summary: buildSummary(status, targetVersion),
         checks,
+        generatedUrl,
       });
     } catch (error) {
       renderResult({
@@ -114,15 +199,16 @@ function init(bridge) {
         title: "Check failed",
         summary: "Unexpected error while running checks.",
         checks: [{ status: "fail", message: String(error) }],
+        generatedUrl: null,
       });
     } finally {
       checkBtn.disabled = false;
-      checkBtn.textContent = "Check Compatibility";
+      checkBtn.textContent = "Generate and Check";
     }
   });
 }
 
-async function compareAgainstStableFormula(bridge, formulaName, detectedVersion) {
+async function compareAgainstStableFormula(bridge, formulaName, targetVersion) {
   try {
     const response = await fetch(
       `https://formulae.brew.sh/api/formula/${encodeURIComponent(formulaName)}.json`
@@ -145,38 +231,31 @@ async function compareAgainstStableFormula(bridge, formulaName, detectedVersion)
       };
     }
 
-    if (!detectedVersion) {
-      return {
-        status: "warn",
-        message: `Current stable for '${formulaName}' is ${stableVersion}; URL version could not be compared.`,
-      };
-    }
-
-    const cmp = bridge.compareVersions(detectedVersion, stableVersion);
+    const cmp = bridge.compareVersions(targetVersion, stableVersion);
     if (cmp === null || cmp === undefined) {
       return {
         status: "warn",
-        message: `Could not compare detected version with '${formulaName}' stable (${stableVersion}).`,
+        message: `Could not compare target version with '${formulaName}' stable (${stableVersion}).`,
       };
     }
 
     if (cmp === 0) {
       return {
         status: "ok",
-        message: `Detected version matches current stable '${formulaName}' version (${stableVersion}).`,
+        message: `Target version matches current stable '${formulaName}' version (${stableVersion}).`,
       };
     }
 
     if (cmp < 0) {
       return {
         status: "warn",
-        message: `Detected version (${detectedVersion}) is older than current stable '${formulaName}' (${stableVersion}).`,
+        message: `Target version (${targetVersion}) is older than '${formulaName}' stable (${stableVersion}).`,
       };
     }
 
     return {
       status: "warn",
-      message: `Detected version (${detectedVersion}) is newer than current stable '${formulaName}' (${stableVersion}).`,
+      message: `Target version (${targetVersion}) is newer than '${formulaName}' stable (${stableVersion}).`,
     };
   } catch (_error) {
     return {
@@ -197,33 +276,41 @@ function overallStatus(checks) {
 }
 
 function statusTitle(status) {
-  if (status === "ok") return "Compatible";
-  if (status === "warn") return "Compatible with Warnings";
-  return "Not Compatible";
+  if (status === "ok") return "Ready";
+  if (status === "warn") return "Needs Review";
+  return "Not Ready";
 }
 
-function buildSummary(status, detectedVersion) {
+function buildSummary(status, targetVersion) {
   if (status === "ok") {
-    return detectedVersion
-      ? `All checks passed. Homebrew parser detected ${detectedVersion}.`
-      : "All checks passed.";
+    return `Checks passed for manual target version ${targetVersion}.`;
   }
   if (status === "warn") {
-    return "Core compatibility checks passed, but review warnings before using this in a formula.";
+    return "URL/version generation succeeded with warnings. Review the checks before using it in a formula bump.";
   }
   return "One or more required checks failed.";
 }
 
-function renderResult({ status, title, summary, checks }) {
+function renderResult({ status, title, summary, checks, generatedUrl }) {
   const panel = document.getElementById("resultPanel");
   const titleEl = document.getElementById("resultTitle");
   const summaryEl = document.getElementById("resultSummary");
   const checksEl = document.getElementById("resultChecks");
+  const generatedUrlBlock = document.getElementById("generatedUrlBlock");
+  const generatedUrlValue = document.getElementById("generatedUrlValue");
 
   panel.classList.remove("hidden");
   titleEl.textContent = title;
   titleEl.className = status;
   summaryEl.textContent = summary;
+
+  if (generatedUrl) {
+    generatedUrlBlock.classList.remove("hidden");
+    generatedUrlValue.textContent = generatedUrl;
+  } else {
+    generatedUrlBlock.classList.add("hidden");
+    generatedUrlValue.textContent = "";
+  }
 
   checksEl.innerHTML = "";
   for (const check of checks) {
@@ -246,6 +333,7 @@ function renderBridgeFailure() {
           "Confirm the ruby.wasm CDN script is reachable and loaded before app.js executes.",
       },
     ],
+    generatedUrl: null,
   });
 }
 

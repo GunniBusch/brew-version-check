@@ -6,6 +6,7 @@ Portions of this project are derived from Homebrew source files:
 
 - `Library/Homebrew/version.rb`
 - `Library/Homebrew/version/parser.rb`
+- `Library/Homebrew/dev-cmd/bump-formula-pr.rb` (`update_url` logic)
 
 Source: <https://github.com/Homebrew/brew>
 License: BSD 2-Clause (`/Users/leonadomaitis/pfusch/brew-version-check/LICENSE`)
