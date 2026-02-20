@@ -1,0 +1,146 @@
+:root {
+  --bg: #f3efe2;
+  --panel: #fffbef;
+  --ink: #212015;
+  --muted: #5f5a43;
+  --accent: #0f7f57;
+  --warn: #9d5d02;
+  --fail: #9e2b25;
+  --line: #ddd4bb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+  background:
+    radial-gradient(circle at 10% 5%, #fff6ce 0%, transparent 35%),
+    radial-gradient(circle at 90% 95%, #e6f7db 0%, transparent 40%),
+    var(--bg);
+}
+
+.shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+header {
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin: 0;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 12px 0;
+  line-height: 1.15;
+}
+
+.panel {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 8px 20px rgba(33, 32, 21, 0.08);
+}
+
+.panel + .panel {
+  margin-top: 16px;
+}
+
+label {
+  display: block;
+  margin: 10px 0 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+input {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid #c9bea1;
+  border-radius: 10px;
+  font-size: 0.97rem;
+  background: #fffef8;
+}
+
+input:focus {
+  outline: 2px solid #7eb6a3;
+  outline-offset: 1px;
+}
+
+button {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #0f7f57, #0f5f7f);
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#resultTitle {
+  margin: 0 0 7px;
+}
+
+#resultSummary {
+  margin: 0 0 10px;
+}
+
+#resultChecks {
+  margin: 0;
+  padding-left: 18px;
+}
+
+#resultChecks li {
+  margin-bottom: 8px;
+}
+
+.ok {
+  color: var(--accent);
+}
+
+.warn {
+  color: var(--warn);
+}
+
+.fail {
+  color: var(--fail);
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding: 16px 12px 32px;
+  }
+
+  .panel {
+    padding: 13px;
+    border-radius: 12px;
+  }
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homebrew Version Compatibility Check</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@ruby/3.4-wasm-wasi@2.8.1/dist/browser.script.iife.js"></script>
+    <script type="text/ruby" src="./app.rb"></script>
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <p class="eyebrow">Brew Formula Helper</p>
+        <h1>Version and URL Compatibility Checker</h1>
+        <p>
+          Uses a Ruby WebAssembly port of Homebrew's version parser to detect versions from
+          source URLs and compare them against declared and stable formula versions.
+        </p>
+      </header>
+
+      <section class="panel">
+        <label for="formulaName">Formula name (optional)</label>
+        <input id="formulaName" type="text" placeholder="e.g. wget" />
+
+        <label for="sourceUrl">Source URL</label>
+        <input
+          id="sourceUrl"
+          type="url"
+          placeholder="https://github.com/org/project/archive/v1.2.3.tar.gz"
+        />
+
+        <label for="declaredVersion">Declared version (optional)</label>
+        <input id="declaredVersion" type="text" placeholder="e.g. 1.2.3" />
+
+        <button id="checkBtn" type="button">Check Compatibility</button>
+      </section>
+
+      <section id="resultPanel" class="panel hidden" aria-live="polite">
+        <h2 id="resultTitle"></h2>
+        <p id="resultSummary"></p>
+        <ul id="resultChecks"></ul>
+      </section>
+    </main>
+  </body>
+</html>
