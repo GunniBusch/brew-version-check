@@ -44,9 +44,9 @@ Open <http://localhost:8080>.
 ## Deploy to GitHub Pages
 
 1. Push repository to GitHub.
-2. In repository settings, enable GitHub Pages and choose deploy from branch.
-3. Select your branch (for example `main`) and root folder (`/`).
-4. Save. GitHub Pages will host `index.html`.
+2. In repository settings, open **Pages**.
+3. Set **Source** to **GitHub Actions**.
+4. The workflow at `/Users/leonadomaitis/pfusch/brew-version-check/.github/workflows/deploy-pages.yml` will deploy on every push to `main`.
 
 ## Notes
 
